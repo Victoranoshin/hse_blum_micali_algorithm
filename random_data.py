@@ -8,9 +8,18 @@ from tqdm import tqdm
 from scipy.special import gammainc
 from functools import wraps
 from time import time
+from typing import Set
 
+def prime_diriv(n: int) -> Set[int]:
+    """Получение простых делителей числа
 
-def prime_diriv(n):
+    Args:
+        n (int): Число, для которого
+        нужно найти простые делители
+
+    Returns:
+        Set[int]: set простых делителей n
+    """
     ans = set()
     d = 2
     while d * d <= n:
@@ -23,19 +32,26 @@ def prime_diriv(n):
         ans.add(n)
     return ans
 
+def find_generator_of_group_z(p: int) -> int:
+    """Поиск первообразного корня по модулю p
 
-def find_generator_of_group_z(p):
-    all_prime_dir_p = prime_diriv(p-1)
+    Args:
+        p (int): модуль корня
+
+    Returns:
+        int: один из первообразных корней
+    """
+    order = p - 1 # значение, простые делители которого ищем
+    all_prime_dir_p = prime_diriv(order)
     g = 2
     while True:
         is_generator = True
         for q in all_prime_dir_p:
-            if pow(g, p // q, p + 1) == 1:
+            if pow(g, order // q, p) == 1:
                 is_generator = False
                 g += 1
                 break
-            if is_generator:
-                return g
+        if is_generator: return g
 
 
 def mean_std_cvar_uniform_randomness(list_of_sets):
@@ -113,10 +129,20 @@ def timing(f):
     return wrap
 
 
-def generate_random_list_of_sets(number_of_elements, p, g):
+def generate_random_seq(number_of_elements: int, p: int,
+                        g: int) -> str:
+    """Генерация псевдослучайной последовательности бит
+
+    Args:
+        number_of_elements (int): число элементов
+        p (int): Простое число
+        g (int): Первообразный корень по модулю p
+
+    Returns:
+        str: _description_
+    """
     bit_output = ""
-    seed = random.randint(1, 1e14)
-    x = seed
+    x = random.randint(1, int(1e14))
     for _ in range(number_of_elements):
         x = pow(g, x, p)
         b = 0 if x < p/2 else 1
@@ -125,13 +151,13 @@ def generate_random_list_of_sets(number_of_elements, p, g):
 
 
 @timing
-def generate_random_list_of_sets_timed(number_of_elements, p, g):
-    return generate_random_list_of_sets(number_of_elements, p, g)
+def generate_random_seq_timed(number_of_elements, p, g):
+    return generate_random_seq(number_of_elements, p, g)
 
 
 @timing
 def standart_genration(number_of_elements):
-    random.seed(random.randint(1, 1e14))
+    random.seed(random.randint(1, int(1e14)))
     generated_str = ""
     for _ in range(number_of_elements):
         generated_str += str(random.randint(0, 1))
@@ -149,7 +175,7 @@ if __name__ == "__main__":
 
     for _ in tqdm(range(NUMBER_OF_SETS)):
         list_of_sets.append(
-            generate_random_list_of_sets(NUMBER_OF_ELEMENTS, p, g))
+            generate_random_seq(NUMBER_OF_ELEMENTS, p, g))
 
     mean_std_cvar_uniform_randomness(list_of_sets)
 
@@ -165,7 +191,7 @@ if __name__ == "__main__":
     custom_gen_time = []
     for number_of_elements in tqdm(number_of_elements_list):
         standart_gen_time.append(
-            np.mean([generate_random_list_of_sets_timed(number_of_elements,
+            np.mean([generate_random_seq_timed(number_of_elements,
                                                         p, g)
                      for _ in range(elements_for_mean)]))
         custom_gen_time.append(
